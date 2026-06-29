@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Food Ordering (Instant Admin Mode)</title>
+    <title>School Food Ordering (Stable Admin Mode)</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -644,11 +644,27 @@
             ]
         };
 
-        // โหลดข้อมูลเก่าจากเครื่อง
-        let shopsData = JSON.parse(localStorage.getItem('sriyapai_shops')) || defaultShops;
-        let menusData = JSON.parse(localStorage.getItem('sriyapai_menus')) || defaultMenus;
+        // 🛡️ [ป้องกัน Error]: ครอบระบบโหลดข้อมูลกัน LocalStorage พังกลางคัน
+        let shopsData = defaultShops;
+        let menusData = defaultMenus;
 
-        // Smart Sync
+        try {
+            const savedShops = localStorage.getItem('sriyapai_shops');
+            if (savedShops) {
+                const parsed = JSON.parse(savedShops);
+                if (Array.isArray(parsed)) shopsData = parsed;
+            }
+        } catch (e) { console.error("Shops local storage error, resetting...", e); }
+
+        try {
+            const savedMenus = localStorage.getItem('sriyapai_menus');
+            if (savedMenus) {
+                const parsed = JSON.parse(savedMenus);
+                if (typeof parsed === 'object' && parsed !== null) menusData = parsed;
+            }
+        } catch (e) { console.error("Menus local storage error, resetting...", e); }
+
+        // Smart Sync ดึงข้อมูลโค้ดใหม่บนกิตฮับทับแคชเก่าทันที
         defaultShops.forEach(defShop => {
             let activeShop = shopsData.find(s => s.id === defShop.id);
             if (activeShop && defShop.img && defShop.img !== activeShop.img) {
@@ -744,7 +760,7 @@
                     shop.img = document.getElementById("editShopImg").value.trim();
                     
                     saveToLocalStorage();
-                    renderShops(); // แสดงผลภาพใหม่บนหน้าเว็บทันที!
+                    renderShops(); 
                     document.getElementById("editShopModal").style.display = "none";
                 }
             });
@@ -778,11 +794,11 @@
             document.getElementById("checkoutBtn").addEventListener("click", runCheckoutSimulation);
         }
 
-        // Live Preview Function
-        window.updateLivePreview = function(url) {
+        // Live Preview Function ปลอดภัยไม่มี Error ลูป
+        function updateLivePreview(url) {
             const previewBox = document.getElementById("imageLivePreviewBox");
-            if (url.trim() !== "") {
-                previewBox.innerHTML = `<img src="${url.trim()}" onerror="this.parentElement.innerHTML='<span style=\'color:red;font-size:14px;\'>❌ ลิงก์รูปภาพไม่ถูกต้อง หรือโหลดไม่ได้</span>'">`;
+            if (url && url.trim() !== "") {
+                previewBox.innerHTML = `<img src="${url.trim()}" onerror="this.style.display='none'; document.getElementById('imageLivePreviewBox').innerHTML='<span style=\'color:red;font-size:14px;\'>❌ ลิงก์รูปภาพไม่ถูกต้อง หรือโหลดไม่ได้</span>'">`;
             } else {
                 previewBox.innerHTML = `<span style="color:#aaa; font-size:14px;">แสดงตัวอย่างภาพตรงนี้ทันที</span>`;
             }
@@ -824,7 +840,7 @@
         }
 
         // เปิดหน้าต่างแก้ไขข้อมูลร้านค้า
-        window.openEditShopModal = function(shopId) {
+        function openEditShopModal(shopId) {
             const shop = shopsData.find(s => s.id === shopId);
             if (shop) {
                 document.getElementById("editShopId").value = shop.id;
@@ -835,10 +851,10 @@
                 updateLivePreview(shop.img || "");
                 document.getElementById("editShopModal").style.display = "flex";
             }
-        };
+        }
 
         // เปิดหน้าต่างดูเมนูอาหาร
-        window.openMenuModal = function(shopId) {
+        function openMenuModal(shopId) {
             activeShopIdForMenu = shopId;
             const shop = shopsData.find(s => s.id === shopId);
             const shopName = currentLang === 'th' ? shop.nameTh : shop.nameEn;
@@ -885,7 +901,7 @@
                         </div>
                     </div>
                     ` : ''}
-                    <button class="btn-primary btn-add-cart" ${disabledAttr} onclick="addItemToCart(${shopId}, ${item.id}, ${item.price}, '${item.nameTh.replace(/'/g, "\\'")}', '${item.nameEn.replace(/'/g, "\\'")}')">
+                    <button class="btn-primary btn-add-cart" ${disabledAttr} onclick="addItemToCart(${shopId}, ${item.id})">
                         ${i18n[currentLang].btn_add_to_cart}
                     </button>
                 `;
@@ -893,16 +909,22 @@
             });
 
             document.getElementById("menuModal").style.display = "flex";
-        };
+        }
 
-        window.addItemToCart = function(shopId, itemId, basePrice, baseNameTh, baseNameEn) {
+        function addItemToCart(shopId, itemId) {
             const shop = shopsData.find(s => s.id === shopId);
+            const shopMenus = menusData[shopId] || [
+                { id: 101, nameTh: "เมนูซิกเนเจอร์จานหลัก", nameEn: "Signature Main Dish", price: 45, available: true }
+            ];
+            const item = shopMenus.find(m => m.id === itemId);
+            if (!item) return;
+
             const spicyVal = document.querySelector(`input[name="spicy_${itemId}"]:checked`).value;
             const addEgg = document.getElementById(`egg_${itemId}`).checked;
             const noVeg = document.getElementById(`noveg_${itemId}`).checked;
             const addNoodle = document.getElementById(`noodle_${itemId}`).checked;
 
-            let finalPrice = basePrice;
+            let finalPrice = item.price;
             let customNotes = [`Spicy: ${spicyVal}`];
             
             if(addEgg) { finalPrice += 10; customNotes.push("+Egg"); }
@@ -910,16 +932,16 @@
             if(addNoodle) { finalPrice += 10; customNotes.push("+Noodle"); }
 
             cart.push({
-                cartId: Date.now() + Math.random().toString(36).substr(2, 5),
+                cartId: Date.now() + Math.random().toString(36).slice(2, 7),
                 shopTh: shop.nameTh, shopEn: shop.nameEn,
-                nameTh: `${baseNameTh} (${customNotes.join(', ')})`,
-                nameEn: `${baseNameEn} (${customNotes.join(', ')})`,
+                nameTh: `${item.nameTh} (${customNotes.join(', ')})`,
+                nameEn: `${item.nameEn} (${customNotes.join(', ')})`,
                 price: finalPrice, quantity: 1
             });
             renderCart();
             document.getElementById("menuModal").style.display = "none";
             document.getElementById("cart-section").scrollIntoView({ behavior: 'smooth' });
-        };
+        }
 
         function renderCart() {
             const emptyMsg = document.getElementById("cartEmptyMessage");
@@ -950,10 +972,10 @@
             document.getElementById("cartTotalAmount").textContent = total;
         }
 
-        window.removeItemFromCart = function(cartId) {
+        function removeItemFromCart(cartId) {
             cart = cart.filter(item => item.cartId !== cartId);
             renderCart();
-        };
+        }
 
         function runCheckoutSimulation() {
             const locSelect = document.getElementById("locationSelect").value;
@@ -985,7 +1007,6 @@
 
                 if(currentStep < steps.length) {
                     document.getElementById(steps[currentStep]).className = "step active";
-                    // ⚡ [FIXED]: ใส่เครื่องหมายคำพูดครอบไอดี ป้องกัน ReferenceError เรียบร้อยแล้ว
                     document.getElementById("trackingStatusText").textContent = statuses[currentStep];
                     let percent = (currentStep / (steps.length - 1)) * 100;
                     document.getElementById("progressLineFill").style.width = `${percent}%`;
