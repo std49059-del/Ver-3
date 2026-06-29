@@ -575,7 +575,7 @@
     </div>
 
     <script>
-        // --- 1. CONFIGS & DICTIONARIES (โหลดทันที) ---
+        // --- 1. CONFIGS & DICTIONARIES ---
         const i18n = {
             th: {
                 nav_shops: "ร้านค้า", nav_cart: "ตะกร้าสินค้า",
@@ -588,7 +588,7 @@
                 btn_checkout: "สั่งซื้ออาหาร (Checkout)", title_tracking: "ติดตามออเดอร์ (Order Tracking)",
                 tracking_timer_text: "อีก 15 นาทีอาหารจะถึงมือคุณ", step_preparing: "Preparing",
                 step_cooking: "Cooking", step_delivering: "Delivering", step_completed: "Completed",
-                delivery_done_title: "การส่งเสสิ้นแล้ว", delivery_done_desc: "(Delivery Completed)",
+                delivery_done_title: "การส่งเสร็จสิ้นแล้ว", delivery_done_desc: "(Delivery Completed)",
                 btn_select_menu: "เลือกเมนู", label_spicy: "ระดับความเผ็ด:", label_egg: "เพิ่มไข่ดาว (+10 ฿)",
                 label_no_veg: "ไม่ใส่ผัก", label_more_noodle: "เพิ่มเส้น (+10 ฿)", btn_add_to_cart: "เพิ่มลงตะกร้า",
                 txt_available: "พร้อมขาย", txt_outofstock: "หมด", opt_no_spicy: "ไม่เผ็ด", opt_mid_spicy: "กลาง", opt_high_spicy: "เผ็ดมาก",
@@ -648,7 +648,7 @@
         window.shopsData = defaultShops;
         window.menusData = defaultMenus;
 
-        // ดึงค่าเก่าจาก LocalStorage (ถ้ามี)
+        // ดึงค่าเก่าจาก LocalStorage
         try {
             const savedShops = localStorage.getItem('sriyapai_shops');
             if (savedShops) { window.shopsData = JSON.parse(savedShops); }
@@ -663,7 +663,7 @@
             } catch(e) { console.error(e); }
         }
 
-        // --- 2. GLOBAL COMPONENT FUNCTIONS (ผูกเข้า Window ทันที ป้องกันปัญหาหาฟังก์ชันไม่เจอ) ---
+        // --- 2. GLOBAL COMPONENT FUNCTIONS ---
         window.updateLivePreview = function(url) {
             const previewBox = document.getElementById("imageLivePreviewBox");
             if (!previewBox) return;
@@ -869,7 +869,7 @@
             });
         };
 
-        // --- 3. DOMContentLoaded INITIALIZATION (ผูกระบบเหตุการณ์หลังโครงสร้าง HTML พร้อมทำงาน) ---
+        // --- 3. DOMContentLoaded INITIALIZATION ---
         document.addEventListener("DOMContentLoaded", () => {
             // โหลด Dropdown สถานที่
             const select = document.getElementById("locationSelect");
@@ -923,7 +923,7 @@
             const cEdit = document.getElementById("closeEditShopModal");
             if(cEdit) cEdit.addEventListener("click", () => { const m = document.getElementById("editShopModal"); if(m) m.style.display = "none"; });
 
-            // ปุ่มบันทึกการตรวจสอบความถูกต้องของแอดมิน (Credential Verification)
+            // ตรวจสอบความถูกต้องเพื่อเข้าสู่ระบบแอดมิน
             const submitLoginBtn = document.getElementById("submitLoginBtn");
             if (submitLoginBtn) {
                 submitLoginBtn.addEventListener("click", () => {
@@ -934,7 +934,7 @@
                     const email = emailElem.value.trim();
                     const pass = passElem.value.trim();
                     
-                    // ปรับเปลี่ยนค่าล็อกอินตามที่คุณระบุมาอย่างเข้มงวด
+                    // ปรับเปลี่ยนเงื่อนไขสิทธิ์เป็นข้อมูลชุดใหม่ของคุณอย่างแม่นยำ
                     if (email === "std49059@sriyapai.ac.th" && pass === "1869900778503") {
                         window.isAdmin = true;
                         document.body.classList.add("is-admin");
@@ -1076,7 +1076,7 @@
                 });
             }
 
-            // สั่งรันชุดแสดงผลครั้งแรกอย่างปลอดภัย
+            // สั่งรันชุดแสดงผลครั้งแรก
             window.renderShops();
             window.updateLanguageDOM();
         });
